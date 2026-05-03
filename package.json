@@ -1,0 +1,32 @@
+{
+  "name": "raepo",
+  "version": "0.1.2",
+  "description": "A command-line tool for understanding how long pull requests take to merge in a GitHub repository, broken down by author.",
+  "type": "module",
+  "bin": {
+    "raepo": "dist/raepo.js",
+    "ræpo": "dist/raepo.js"
+  },
+  "files": ["dist", "README.md", "LICENSE"],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "bun build src/cli.ts --target=node --outfile=dist/raepo.js && chmod +x dist/raepo.js",
+    "raepo": "bun run src/cli.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "biome check .",
+    "format": "biome format --write .",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@types/node": "^20.14.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  },
+  "license": "MIT",
+  "author": "Henrik Vendelbo",
+  "keywords": ["github", "pull-request", "pr", "metrics", "cli"]
+}

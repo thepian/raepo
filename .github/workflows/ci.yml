@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - run: bun install --frozen-lockfile
+
+      - name: Lint & format
+        run: bun run check
+
+      - name: Typecheck
+        run: bun run typecheck
+
+      - name: Test
+        # Live acceptance tests hit api.github.com against karpathy/nanochat.
+        # The auto-injected GITHUB_TOKEN gets ~1000 req/hour, comfortably
+        # above what our handful of tests need.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bun run test
+
+      - name: Build
+        run: bun run build
+
+      - name: Smoke-test the built bundle
+        run: node dist/raepo.js --help | head -1
+
+  publish:
+    # Only on pushes to main, only if `test` passed. PRs from forks can't
+    # access secrets anyway, but the explicit guard makes the intent clear.
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # required for `npm publish --provenance`
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - run: bun install --frozen-lockfile
+
+      - run: bun run build
+
+      - name: Publish if package.json version is new
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          current=$(node -p "require('./package.json').version")
+          published=$(npm view raepo version 2>/dev/null || true)
+          if [ "$current" = "$published" ]; then
+            echo "raepo@$current already on npm — nothing to publish"
+            exit 0
+          fi
+          echo "Publishing raepo@$current (previous: ${published:-none})"
+          npm publish --access public --provenance
