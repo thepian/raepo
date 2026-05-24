@@ -3,8 +3,8 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { createGithubProvider } from './github.ts';
-import { ProviderHttpError, ProviderRateLimitError } from './types.ts';
+import { createGithubProvider } from '../../../src/provider/github.ts';
+import { ProviderHttpError, ProviderRateLimitError } from '../../../src/provider/types.ts';
 
 type GhUser = { login: string; type?: string } | null;
 type GhPull = {
@@ -481,13 +481,14 @@ describe('githubProvider — bot detection', () => {
     });
   });
 
-  it.each(['dependabot', 'renovate', 'github-actions'])(
-    'flags well-known bot login: %s',
-    async (login) => {
-      const author = await botFor({ login, type: 'User' });
-      expect(author?.isBot).toBe(true);
-    },
-  );
+  it.each([
+    'dependabot',
+    'renovate',
+    'github-actions',
+  ])('flags well-known bot login: %s', async (login) => {
+    const author = await botFor({ login, type: 'User' });
+    expect(author?.isBot).toBe(true);
+  });
 
   it('flags any login ending in [bot]', async () => {
     const author = await botFor({ login: 'random-app[bot]', type: 'User' });

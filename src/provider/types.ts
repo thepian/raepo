@@ -4,7 +4,7 @@
  * can drop in without changing callers.
  */
 
-import type { Repo } from '../domain.ts';
+import type { Repo } from '../command.ts';
 
 export type ProviderName = 'github';
 

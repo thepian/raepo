@@ -1,6 +1,18 @@
-import type { Format, Repo, SortKey } from './domain.ts';
+import { bold, cyan, dim, green, red, yellow } from 'picocolors';
+import type { Format, Repo, SortKey } from './command.ts';
 import type { AuthorStats, RepoSummary } from './stats.ts';
 import { DAY_MS, HOUR_MS, MINUTE_MS } from './time.ts';
+
+function paintAccept(ratio: number | null, text: string): string {
+  if (ratio === null) return text;
+  if (ratio >= 0.8) return green(text);
+  if (ratio >= 0.5) return yellow(text);
+  return red(text);
+}
+
+function boldCyan(s: string): string {
+  return bold(cyan(s));
+}
 
 export type OutputContext = {
   repo: Repo;
@@ -109,9 +121,9 @@ export function renderTable(
 ): string {
   const partition = opts.partition ?? true;
   const lines: string[] = [];
-  lines.push(`Repo:    ${ctx.repo.org}/${ctx.repo.name}`);
-  lines.push(`Window:  ${formatWindow(ctx)}`);
-  lines.push(`PRs:     ${formatSummaryLine(ctx)}`);
+  lines.push(`${dim('Repo:   ')} ${cyan(`${ctx.repo.org}/${ctx.repo.name}`)}`);
+  lines.push(`${dim('Window: ')} ${formatWindow(ctx)}`);
+  lines.push(`${dim('PRs:    ')} ${formatSummaryLine(ctx)}`);
   lines.push('');
 
   if (stats.length === 0) {
@@ -200,10 +212,10 @@ export function render(stats: AuthorStats[], ctx: OutputContext, input: RenderIn
  */
 export function renderAuthorDetail(stats: AuthorStats, ctx: OutputContext): string {
   const lines: string[] = [];
-  const label = (k: string, v: string) => `${k.padEnd(18)} ${v}`;
+  const label = (k: string, v: string) => `${dim(k.padEnd(18))} ${v}`;
 
-  lines.push(label('Author:', stats.login));
-  lines.push(label('Repo:', `${ctx.repo.org}/${ctx.repo.name}`));
+  lines.push(label('Author:', boldCyan(stats.login)));
+  lines.push(label('Repo:', cyan(`${ctx.repo.org}/${ctx.repo.name}`)));
   lines.push(label('Window:', formatWindow(ctx)));
   lines.push('');
   lines.push(label('Merged:', String(stats.merged)));
@@ -211,13 +223,14 @@ export function renderAuthorDetail(stats: AuthorStats, ctx: OutputContext): stri
   lines.push(label('Typical:', formatDuration(stats.typical)));
   lines.push(label('Average:', formatDuration(stats.average)));
   lines.push(label('Tail (p90):', formatDuration(stats.tail)));
-  lines.push(label('Acceptance:', formatPercent(stats.accept)));
+  lines.push(label('Acceptance:', paintAccept(stats.accept, formatPercent(stats.accept))));
 
   return `${lines.join('\n')}\n`;
 }
 
 function appendTable(lines: string[], stats: AuthorStats[]): void {
   const headers = ['Author', 'merged', 'typical', 'average', 'tail', 'accept'];
+  const ACCEPT_COL = 5;
   const rows: string[][] = stats.map((s) => [
     s.login,
     String(s.merged),
@@ -233,30 +246,41 @@ function appendTable(lines: string[], stats: AuthorStats[]): void {
     return w;
   });
 
-  const formatRow = (row: string[]): string =>
-    row
-      .map((cell, i) => {
-        const w = widths[i] ?? cell.length;
-        return i === 0 ? cell.padEnd(w) : cell.padStart(w);
-      })
-      .join('  ');
+  // Pad first (using unstyled length), then paint — ANSI codes have zero
+  // visual width, so columns stay aligned.
+  const padCell = (cell: string, i: number): string => {
+    const w = widths[i] ?? cell.length;
+    return i === 0 ? cell.padEnd(w) : cell.padStart(w);
+  };
 
-  lines.push(formatRow(headers));
+  lines.push(headers.map((h, i) => bold(padCell(h, i))).join('  '));
   const ruleLength = widths.reduce((sum, w) => sum + w, 0) + (widths.length - 1) * 2;
-  lines.push('─'.repeat(ruleLength));
-  for (const row of rows) lines.push(formatRow(row));
+  lines.push(dim('─'.repeat(ruleLength)));
+  for (let r = 0; r < rows.length; r++) {
+    const row = rows[r] as string[];
+    const accept = stats[r]?.accept ?? null;
+    lines.push(
+      row
+        .map((cell, i) => {
+          const padded = padCell(cell, i);
+          if (i === ACCEPT_COL) return paintAccept(accept, padded);
+          return padded;
+        })
+        .join('  '),
+    );
+  }
 }
 
 function appendAuthorLine(lines: string[], label: string, group: AuthorStats[]): void {
   if (group.length === 0) return;
   lines.push('');
-  lines.push(`${label} (${group.length}):`);
+  lines.push(yellow(`${label} (${group.length}):`));
   for (const line of wrapList(
     group.map((s) => s.login),
     LIST_WRAP,
     LIST_INDENT,
   )) {
-    lines.push(line);
+    lines.push(dim(line));
   }
 }
 

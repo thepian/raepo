@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { resolveToken } from './auth.ts';
+import { resolveToken } from '../../src/auth.ts';
 
 describe('resolveToken', () => {
   it('returns the flag when given (and skips env + provider call)', async () => {

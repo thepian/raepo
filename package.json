@@ -7,26 +7,43 @@
     "raepo": "dist/raepo.js",
     "ræpo": "dist/raepo.js"
   },
-  "files": ["dist", "README.md", "LICENSE"],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "engines": {
     "node": ">=20"
   },
+  "packageManager": "bun@1.3.6",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thepian/raepo.git"
+  },
   "scripts": {
+    "prepare": "[ -d .git ] && git config core.hooksPath .githooks || true",
     "build": "bun build src/cli.ts --target=node --outfile=dist/raepo.js && chmod +x dist/raepo.js",
     "raepo": "bun run src/cli.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "check": "biome check .",
-    "format": "biome format --write .",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.9.4",
-    "@types/node": "^20.14.0",
-    "typescript": "^5.6.0",
-    "vitest": "^2.1.0"
+    "@biomejs/biome": "^2.4.15",
+    "@types/node": "^25.9.1",
+    "picocolors": "^1.1.1",
+    "typescript": "^6.0.3",
+    "valibot": "^1.4.0",
+    "vitest": "^4.1.7"
   },
   "license": "MIT",
   "author": "Henrik Vendelbo",
-  "keywords": ["github", "pull-request", "pr", "metrics", "cli"]
+  "keywords": [
+    "github",
+    "pull-request",
+    "pr",
+    "metrics",
+    "cli"
+  ]
 }

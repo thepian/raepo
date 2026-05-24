@@ -1,57 +1,38 @@
 import { describe, expect, it } from 'vitest';
-import { parseArgs } from './parse.ts';
+import { BUILT_IN_DEFAULTS } from '../../src/config.ts';
+import { parseArgs } from '../../src/parse.ts';
 
 describe('parseArgs — mode detection', () => {
   it('returns help mode when called with no arguments', () => {
-    expect(parseArgs([])).toEqual({ ok: true, value: { mode: 'help' } });
+    expect(parseArgs([])).toEqual({ mode: 'help' });
   });
 
   it('returns help mode for --help and -h', () => {
-    expect(parseArgs(['--help'])).toEqual({ ok: true, value: { mode: 'help' } });
-    expect(parseArgs(['-h'])).toEqual({ ok: true, value: { mode: 'help' } });
+    expect(parseArgs(['--help'])).toEqual({ mode: 'help' });
+    expect(parseArgs(['-h'])).toEqual({ mode: 'help' });
   });
 
   it('returns version mode for --version and -V', () => {
-    expect(parseArgs(['--version'])).toEqual({ ok: true, value: { mode: 'version' } });
-    expect(parseArgs(['-V'])).toEqual({ ok: true, value: { mode: 'version' } });
+    expect(parseArgs(['--version'])).toEqual({ mode: 'version' });
+    expect(parseArgs(['-V'])).toEqual({ mode: 'version' });
   });
 });
 
-describe('parseArgs — analyze mode defaults', () => {
-  it('parses <org>/<repo> and applies built-in defaults', () => {
+describe('parseArgs — analyze mode', () => {
+  it('parses <org>/<repo> and leaves config-influenced flags undefined', () => {
     const r = parseArgs(['karpathy/nanochat']);
     expect(r).toEqual({
-      ok: true,
-      value: {
-        mode: 'analyze',
-        repo: { org: 'karpathy', name: 'nanochat' },
-        options: {
-          authors: [],
-          includeBots: false,
-          format: 'plain',
-          sort: 'merged',
-          verbose: false,
-        },
+      mode: 'analyze',
+      repo: { org: 'karpathy', name: 'nanochat' },
+      options: {
+        authors: [],
+        includeBots: undefined,
+        format: undefined,
+        sort: undefined,
+        verbose: false,
       },
+      config: BUILT_IN_DEFAULTS,
     });
-  });
-});
-
-describe('parseArgs — supplied defaults', () => {
-  it('uses provided defaults when no CLI flag overrides', () => {
-    const opts = analyzeOptions(
-      parseArgs(['karpathy/nanochat'], { format: 'json', sort: 'typical', includeBots: true }),
-    );
-    expect(opts.format).toBe('json');
-    expect(opts.sort).toBe('typical');
-    expect(opts.includeBots).toBe(true);
-  });
-
-  it('CLI flag wins over a provided default', () => {
-    const opts = analyzeOptions(
-      parseArgs(['karpathy/nanochat', '--format', 'csv'], { format: 'json' }),
-    );
-    expect(opts.format).toBe('csv');
   });
 });
 
@@ -68,9 +49,9 @@ describe('parseArgs — --verbose', () => {
 });
 
 function analyzeOptions(r: ReturnType<typeof parseArgs>) {
-  if (!r.ok) throw new Error(`expected ok result, got error: ${r.error.error}`);
-  if (r.value.mode !== 'analyze') throw new Error(`expected analyze mode, got ${r.value.mode}`);
-  return r.value.options;
+  if (r.mode === 'error') throw new Error(`expected ok result, got error: ${r.message}`);
+  if (r.mode !== 'analyze') throw new Error(`expected analyze mode, got ${r.mode}`);
+  return r.options;
 }
 
 describe('parseArgs — --since', () => {
@@ -81,19 +62,19 @@ describe('parseArgs — --since', () => {
 
   it('errors on a missing value', () => {
     const r = parseArgs(['karpathy/nanochat', '--since']);
-    expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.error.error).toMatch(/--since/);
+    expect(r.mode).toBe('error');
+    if (r.mode === 'error') expect(r.message).toMatch(/--since/);
   });
 
   it('errors on a non-date value', () => {
     const r = parseArgs(['karpathy/nanochat', '--since', 'not-a-date']);
-    expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.error.error).toMatch(/YYYY-MM-DD/);
+    expect(r.mode).toBe('error');
+    if (r.mode === 'error') expect(r.message).toMatch(/YYYY-MM-DD/);
   });
 
   it('errors on an out-of-range month', () => {
     const r = parseArgs(['karpathy/nanochat', '--since', '2026-13-01']);
-    expect(r.ok).toBe(false);
+    expect(r.mode).toBe('error');
   });
 });
 
@@ -110,13 +91,13 @@ describe('parseArgs — --max-age', () => {
 
   it('errors on a missing value', () => {
     const r = parseArgs(['karpathy/nanochat', '--max-age']);
-    expect(r.ok).toBe(false);
+    expect(r.mode).toBe('error');
   });
 
   it('errors on an unknown unit', () => {
     const r = parseArgs(['karpathy/nanochat', '--max-age', '30x']);
-    expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.error.error).toMatch(/--max-age/);
+    expect(r.mode).toBe('error');
+    if (r.mode === 'error') expect(r.message).toMatch(/--max-age/);
   });
 });
 
@@ -157,13 +138,13 @@ describe('parseArgs — --author', () => {
 
   it('errors when a comma-only value yields no logins', () => {
     const r = parseArgs(['karpathy/nanochat', '--author', ',,,']);
-    expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.error.error).toMatch(/--author/);
+    expect(r.mode).toBe('error');
+    if (r.mode === 'error') expect(r.message).toMatch(/--author/);
   });
 
   it('errors on a missing value', () => {
     const r = parseArgs(['karpathy/nanochat', '--author']);
-    expect(r.ok).toBe(false);
+    expect(r.mode).toBe('error');
   });
 });
 
@@ -182,8 +163,8 @@ describe('parseArgs — --format', () => {
 
   it('errors on an unknown value', () => {
     const r = parseArgs(['karpathy/nanochat', '--format', 'xml']);
-    expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.error.error).toMatch(/--format/);
+    expect(r.mode).toBe('error');
+    if (r.mode === 'error') expect(r.message).toMatch(/--format/);
   });
 });
 
@@ -195,8 +176,8 @@ describe('parseArgs — --sort', () => {
 
   it('errors on an unknown value', () => {
     const r = parseArgs(['karpathy/nanochat', '--sort', 'name']);
-    expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.error.error).toMatch(/--sort/);
+    expect(r.mode).toBe('error');
+    if (r.mode === 'error') expect(r.message).toMatch(/--sort/);
   });
 });
 
@@ -208,8 +189,8 @@ describe('parseArgs — --limit', () => {
 
   it.each(['0', '-3', 'abc', '1.5'])('errors on "%s"', (value) => {
     const r = parseArgs(['karpathy/nanochat', '--limit', value]);
-    expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.error.error).toMatch(/--limit/);
+    expect(r.mode).toBe('error');
+    if (r.mode === 'error') expect(r.message).toMatch(/--limit/);
   });
 });
 
@@ -221,94 +202,97 @@ describe('parseArgs — --token', () => {
 
   it('errors on a missing value', () => {
     const r = parseArgs(['karpathy/nanochat', '--token']);
-    expect(r.ok).toBe(false);
+    expect(r.mode).toBe('error');
   });
 });
 
 describe('parseArgs — config subcommand', () => {
   it('parses `config get` with no key', () => {
     expect(parseArgs(['config', 'get'])).toEqual({
-      ok: true,
-      value: { mode: 'config', op: 'get' },
+      mode: 'config',
+      op: 'get',
     });
   });
 
   it('parses `config get <key>`', () => {
     expect(parseArgs(['config', 'get', 'format'])).toEqual({
-      ok: true,
-      value: { mode: 'config', op: 'get', key: 'format' },
+      mode: 'config',
+      op: 'get',
+      key: 'format',
     });
   });
 
   it('parses `config set <key> <value>`', () => {
     expect(parseArgs(['config', 'set', 'format', 'json'])).toEqual({
-      ok: true,
-      value: { mode: 'config', op: 'set', key: 'format', value: 'json' },
+      mode: 'config',
+      op: 'set',
+      key: 'format',
+      value: 'json',
     });
   });
 
   it('parses `config list`', () => {
     expect(parseArgs(['config', 'list'])).toEqual({
-      ok: true,
-      value: { mode: 'config', op: 'list' },
+      mode: 'config',
+      op: 'list',
     });
   });
 
   it('errors when `config` has no operation', () => {
     const r = parseArgs(['config']);
-    expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.error.error).toMatch(/config/);
+    expect(r.mode).toBe('error');
+    if (r.mode === 'error') expect(r.message).toMatch(/config/);
   });
 
   it('errors on an unknown operation', () => {
     const r = parseArgs(['config', 'reset']);
-    expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.error.error).toMatch(/get\|set\|list/);
+    expect(r.mode).toBe('error');
+    if (r.mode === 'error') expect(r.message).toMatch(/get\|set\|list/);
   });
 
   it('errors when `config set` is missing the value', () => {
     const r = parseArgs(['config', 'set', 'format']);
-    expect(r.ok).toBe(false);
+    expect(r.mode).toBe('error');
   });
 
   it('errors when `config set` is missing key and value', () => {
     const r = parseArgs(['config', 'set']);
-    expect(r.ok).toBe(false);
+    expect(r.mode).toBe('error');
   });
 
   it('errors on extra arguments after `config get <key>`', () => {
     const r = parseArgs(['config', 'get', 'format', 'extra']);
-    expect(r.ok).toBe(false);
+    expect(r.mode).toBe('error');
   });
 
   it('errors on extra arguments after `config list`', () => {
     const r = parseArgs(['config', 'list', 'extra']);
-    expect(r.ok).toBe(false);
+    expect(r.mode).toBe('error');
   });
 });
 
 describe('parseArgs — error edges', () => {
   it('errors on an unknown flag', () => {
     const r = parseArgs(['karpathy/nanochat', '--bogus']);
-    expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.error.error).toMatch(/--bogus/);
+    expect(r.mode).toBe('error');
+    if (r.mode === 'error') expect(r.message).toMatch(/--bogus/);
   });
 
   it('errors on a second positional <org>/<repo>', () => {
     const r = parseArgs(['karpathy/nanochat', 'foo/bar']);
-    expect(r.ok).toBe(false);
+    expect(r.mode).toBe('error');
   });
 
   it('errors when a flag value looks like another flag', () => {
     const r = parseArgs(['karpathy/nanochat', '--since', '--max-age', '30d']);
-    expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.error.error).toMatch(/--since/);
+    expect(r.mode).toBe('error');
+    if (r.mode === 'error') expect(r.message).toMatch(/--since/);
   });
 
   it('errors when a non-repo positional is given', () => {
     const r = parseArgs(['notarepo']);
-    expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.error.error).toMatch(/<org>\/<repo>/);
+    expect(r.mode).toBe('error');
+    if (r.mode === 'error') expect(r.message).toMatch(/<org>\/<repo>/);
   });
 
   it('accepts flags before the repo positional', () => {

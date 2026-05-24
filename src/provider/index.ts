@@ -25,6 +25,13 @@ export async function defaultTokenFor(name: ProviderName): Promise<string | unde
   }
 }
 
-export type { Provider, ProviderConfig, ProviderName } from './types.ts';
+export type {
+  ListPullsOptions,
+  Provider,
+  ProviderConfig,
+  ProviderName,
+  PullAuthor,
+  PullRequest,
+  Repo,
+} from './types.ts';
 export { ProviderHttpError, ProviderRateLimitError } from './types.ts';
-export type { ListPullsOptions, PullAuthor, PullRequest, Repo } from './types.ts';

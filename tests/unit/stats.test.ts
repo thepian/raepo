@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import type { PullRequest } from './provider/types.ts';
-import { byAuthor, mean, median, percentile, summary, timeToMergeMs } from './stats.ts';
-import { DAY_MS } from './time.ts';
+import type { PullRequest } from '../../src/provider/types.ts';
+import { byAuthor, mean, median, percentile, summary, timeToMergeMs } from '../../src/stats.ts';
+import { DAY_MS } from '../../src/time.ts';
 
 const BASE = new Date('2026-04-01T00:00:00Z');
 

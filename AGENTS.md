@@ -26,6 +26,8 @@ servers or watchers unprompted.
   stuck" view ships, do it as a repo-aggregate bottleneck view, not a
   per-author column.
 
+- **Don't use outdated package.json dependencies**. Do regular update to latest `bun update --latest` and test that no issues are introduced.
+
 ## Code conventions
 
 - Strict TypeScript. No `any` without a comment explaining why.
@@ -35,6 +37,11 @@ servers or watchers unprompted.
   modules.
 - Default to writing no comments. Explain *why* only when it's non-obvious.
 - Minimal dependencies. Bun's stdlib covers HTTP, file I/O, and testing.
+- **Prefer pure functions** — no mutation of arguments or shared state. Local
+  mutation of a variable that never escapes the function is acceptable and
+  sometimes necessary (e.g. `Object.assign` on a fresh accumulator avoids the
+  O(n²) allocations that `reduce` + spread produces). The test: can the caller
+  observe the mutation? If not, it's an implementation detail, not a violation.
 
 ## Testing
 

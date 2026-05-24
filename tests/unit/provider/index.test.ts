@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_PROVIDER, createProvider } from './index.ts';
+import { createProvider, DEFAULT_PROVIDER } from '../../../src/provider/index.ts';
 
 describe('createProvider', () => {
   it('returns a GitHub provider for provider=github', () => {

@@ -1,12 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
-import { collect } from './collect.ts';
+import { collect } from '../../src/collect.ts';
 import type {
   ListPullsOptions,
   Provider,
   PullAuthor,
   PullRequest,
   Repo,
-} from './provider/types.ts';
+} from '../../src/provider/types.ts';
 
 const REPO: Repo = { org: 'o', name: 'r' };
 

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
-  type OutputContext,
   formatDuration,
   formatPercent,
+  type OutputContext,
   render,
   renderAuthorDetail,
   renderCsv,
@@ -10,9 +10,9 @@ import {
   renderTable,
   sortStats,
   wrapList,
-} from './output.ts';
-import type { AuthorStats } from './stats.ts';
-import { DAY_MS as DAY, HOUR_MS as HOUR, MINUTE_MS as MIN } from './time.ts';
+} from '../../src/output.ts';
+import type { AuthorStats } from '../../src/stats.ts';
+import { DAY_MS as DAY, HOUR_MS as HOUR, MINUTE_MS as MIN } from '../../src/time.ts';
 
 const CTX: OutputContext = {
   repo: { org: 'karpathy', name: 'nanochat' },

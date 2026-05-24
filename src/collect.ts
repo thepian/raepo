@@ -1,4 +1,4 @@
-import type { Duration, Repo } from './domain.ts';
+import type { Duration, Repo } from './command.ts';
 import type { ListPullsOptions, Provider, PullRequest } from './provider/types.ts';
 import { DAY_MS } from './time.ts';
 
